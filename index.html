@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>777 - スリーセブン (Puzzle 777)</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(18, 24, 38, 0.85);
+            --border-glow: #00f3ff;
+            --text-color: #ffffff;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            
+            /* 数字ごとのネオンカラー暫定案 */
+            --num-1: #00f3ff; /* シアン */
+            --num-2: #2b65ff; /* 青 */
+            --num-3: #9d00ff; /* 紫 */
+            --num-4: #ff00c8; /* ピンク/マゼンタ */
+            --num-5: #ff2a2a; /* 赤 */
+            --num-6: #ff9900; /* オレンジ/黄 */
+            --num-7: #e0e8f0; /* 白銀 */
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 850px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: var(--panel-bg);
+            border: 2px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 15px rgba(0, 243, 255, 0.1);
+            border-radius: 12px;
+        }
+
+        header {
+            text-align: center;
+            width: 100%;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff, 0 0 30px #00f3ff;
+            font-weight: 900;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-box span {
+            display: block;
+            font-size: 0.75rem;
+            color: #8ab4f8;
+        }
+
+        .info-box strong {
+            font-size: 1.1rem;
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 盤面レイアウト (8列 × 12行) */
+        #board {
+            position: relative;
+            width: 264px;
+            height: 396px;
+            background: #05070c;
+            border: 2px solid #00f3ff;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(12, 1fr);
+            overflow: hidden;
+        }
+
+        .cell {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .block {
+            position: absolute;
+            width: 33px;
+            height: 33px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            box-shadow: inset 0 0 8px rgba(255,255,255,0.6), 0 0 8px currentColor;
+            transition: transform 0.05s linear;
+            z-index: 2;
+        }
+
+        /* NEXT表示エリア */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90px;
+        }
+
+        .next-container {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .next-container span {
+            font-size: 0.75rem;
+            color: #8ab4f8;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .next-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            height: 70px;
+            justify-content: center;
+        }
+
+        .mini-block {
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        /* 操作コントローラー */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .ctrl-btn {
+            background: linear-gradient(135deg, rgba(0,243,255,0.2), rgba(43,101,255,0.3));
+            border: 1px solid #00f3ff;
+            color: #fff;
+            padding: 12px 0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 243, 255, 0.2);
+            transition: all 0.1s ease;
+        }
+
+        .ctrl-btn:active {
+            transform: scale(0.95);
+            background: rgba(0,243,255,0.4);
+            box-shadow: 0 0 12px #00f3ff;
+        }
+
+        /* オーバーレイ画面 (タイトル、一時停止、ゲームオーバー) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 7, 12, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px;
+        }
+
+        .overlay h2 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: #00f3ff;
+            text-shadow: 0 0 10px #00f3ff;
+        }
+
+        .overlay p {
+            margin-bottom: 20px;
+            color: #b0c4de;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .menu-btn {
+            background: linear-gradient(135deg, #00f3ff, #2b65ff);
+            border: none;
+            color: #05070c;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
+            transition: transform 0.1s, box-shadow 0.1s;
+            margin: 8px 0;
+        }
+
+        .menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px #00f3ff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 数字カラー定義 */
+        .c-1 { color: #000; background: var(--num-1); color: #05070c; }
+        .c-2 { color: #fff; background: var(--num-2); }
+        .c-3 { color: #fff; background: var(--num-3); }
+        .c-4 { color: #fff; background: var(--num-4); }
+        .c-5 { color: #fff; background: var(--num-5); }
+        .c-6 { color: #05070c; background: var(--num-6); }
+        .c-7 { color: #05070c; background: var(--num-7); box-shadow: inset 0 0 10px #fff, 0 0 15px #fff; }
+
+        /* エフェクト用クラス */
+        .gold-flash {
+            animation: goldFlash 0.4s ease-in-out;
+        }
+        @keyframes goldFlash {
+            0% { background: #fff; box-shadow: 0 0 20px #ffd700; }
+            50% { background: #ffd700; box-shadow: 0 0 30px #ff8c00; }
+            100% { background: var(--num-7); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <h1>777</h1>
+        </header>
+
+        <div class="info-panel">
+            <div class="info-box">
+                <span>SCORE</span>
+                <strong id="score-val">0</strong>
+            </div>
+            <div class="info-box">
+                <span>HIGH SCORE</span>
+                <strong id="highscore-val">0</strong>
+            </div>
+            <div class="info-box">
+                <span>CHAIN</span>
+                <strong id="chain-val">-</strong>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 盤面 -->
+            <div id="board"></div>
+
+            <!-- サイドパネル（次ブロック） -->
+            <div class="side-panel">
+                <div class="next-container">
+                    <span>NEXT 1</span>
+                    <div id="next1" class="next-preview"></div>
+                </div>
+                <div class="next-container">
+                    <span>NEXT 2</span>
+                    <div id="next2" class="next-preview"></div>
+                </div>
+                <button class="ctrl-btn" id="pause-btn" style="padding: 8px; font-size: 0.85rem;">一時停止</button>
+            </div>
+        </div>
+
+        <!-- タッチ操作コントローラー -->
+        <div class="controls">
+            <button class="ctrl-btn" id="btn-left">◀ 左</button>
+            <button class="ctrl-btn" id="btn-rotate">↻ 回転</button>
+            <button class="ctrl-btn" id="btn-right">右 ▶</button>
+            <button class="ctrl-btn" id="btn-down">▼ 落下</button>
+        </div>
+
+        <!-- タイトル画面 -->
+        <div id="screen-title" class="overlay">
+            <h2>777</h2>
+            <p>合計「7」や「7の連なり」を揃えて消す<br>未来感サイバーパズルゲーム</p>
+            <button class="menu-btn" id="start-btn">GAME START</button>
+        </div>
+
+        <!-- 一時停止画面 -->
+        <div id="screen-pause" class="overlay hidden">
+            <h2>PAUSE</h2>
+            <button class="menu-btn" id="resume-btn">再開する</button>
+            <button class="menu-btn" id="restart-btn">リスタート</button>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="screen-gameover" class="overlay hidden">
+            <h2>GAME OVER</h2>
+            <p>スコア: <span id="final-score">0</span></p>
+            <button class="menu-btn" id="retry-btn">もう一度プレイ</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 設定値・定数 ---
+        const COLS = 8;
+        const ROWS = 12;
+        const DROP_INTERVAL = 600; // 通常落下速度（ミリ秒）- 仮設定値
+        const SOFT_DROP_INTERVAL = 50; // ソフトドロップ時の速度
+
+        // 連鎖ボーナス表（仮決定値）
+        const CHAIN_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
+
+        // --- ゲーム状態変数 ---
+        let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+        let score = 0;
+        let highScore = localStorage.getItem('puzzle_777_highscore') || 0;
+        let currentChain = 0;
+        let gameState = 'TITLE'; // TITLE, PLAYING, PAUSE, GAMEOVER, PROCESSING
+
+        let currentPair = null; // 操作中のペア { block1: {r, c, val}, block2: {r, c, val}, rotState }
+        let nextQueue = [];     // 予告ペアのキュー
+        let dropTimer = null;
+        let isSoftDropping = false;
+
+        // キー入力状態
+        const keys = {};
+
+        // --- 初期化 ---
+        const boardEl = document.getElementById('board');
+        const scoreValEl = document.getElementById('score-val');
+        const highScoreValEl = document.getElementById('highscore-val');
+        const chainValEl = document.getElementById('chain-val');
+
+        function initBoardUI() {
+            boardEl.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    boardEl.appendChild(cell);
+                }
+            }
+            highScoreValEl.textContent = highScore;
+        }
+
+        // --- ランダムブロック生成 (1〜7) ---
+        function getRandomNumber() {
+            return Math.floor(Math.random() * 7) + 1;
+        }
+
+        function createPair() {
+            return {
+                block1: { val: getRandomNumber() },
+                block2: { val: getRandomNumber() },
+                // 初期配置：上部中央（横並びまたは縦並びなど。今回は縦並び: b1が上, b2が下）
+                // r1=0, c1=3 / r2=1, c2=3
+                r1: 0, c1: 3,
+                r2: 1, c2: 3,
+                rotState: 0 // 0: 縦(b1上,b2下), 1: 横(b1左,b2右), 2: 縦(b1下,b2上), 3: 横(b1右,b2左)
+            };
+        }
+
+        function initQueue() {
+            nextQueue = [createPair(), createPair(), createPair()];
+        }
+
+        // --- ゲーム開始・リセット ---
+        function startGame() {
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+            score = 0;
+            currentChain = 0;
+            scoreValEl.textContent = score;
+            chainValEl.textContent = '-';
+            initQueue();
+            spawnPair();
+            
+            document.getElementById('screen-title').classList.add('hidden');
+            document.getElementById('screen-gameover').classList.add('hidden');
+            document.getElementById('screen-pause').classList.add('hidden');
+            
+            gameState = 'PLAYING';
+            startDropTimer();
+        }
+
+        function spawnPair() {
+            currentPair = nextQueue.shift();
+            nextQueue.push(createPair());
+            
+            // 初期位置設定 (中央上部)
+            currentPair.r1 = 0; currentPair.c1 = 3;
+            currentPair.r2 = 0; currentPair.c2 = 4;
+            currentPair.rotState = 1; // 横並びスタート
+
+            updatePairCoordsByRot();
+
+            // スポーン位置が塞がっているかチェック（ゲームオーバー判定）
+            if (!canPlace(currentPair.r1, currentPair.c1) || !canPlace(currentPair.r2, currentPair.c2)) {
+                gameOver();
+                return;
+            }
+            updateUI();
+        }
+
+        // --- 回転・座標計算ヘルパー ---
+        function updatePairCoordsByRot() {
+            // rotState: 0(上), 1(右), 2(下), 3(左) を基準にb2の位置を決定
+            const r1 = currentPair.r1;
+            const c1 = currentPair.c1;
+            switch(currentPair.rotState) {
+                case 0: // b2はb1の上
+                    currentPair.r2 = r1 - 1; currentPair.c2 = c1; break;
+                case 1: // b2はb1の右
+                    currentPair.r2 = r1; currentPair.c2 = c1 + 1; break;
+                case 2: // b2はb1の下
+                    currentPair.r2 = r1 + 1; currentPair.c2 = c1; break;
+                case 3: // b2はb1の左
+                    currentPair.r2 = r1; currentPair.c2 = c1 - 1; break;
+            }
+        }
+
+        function canPlace(r, c) {
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
+            if (board[r][c] !== 0) return false;
+            return true;
+        }
+
+        // --- 操作系 ---
+        function movePair(dr, dc) {
+            if (gameState !== 'PLAYING') return;
+            const nr1 = currentPair.r1 + dr;
+            const nc1 = currentPair.c1 + dc;
+            const nr2 = currentPair.r2 + dr;
+            const nc2 = currentPair.c2 + dc;
+
+            // 移動先が両方有効か（または片方だけでも壁蹴り・柔軟移動の余地）
+            if (canPlace(nr1, nc1) && canPlace(nr2, nc2)) {
+                currentPair.r1 = nr1; currentPair.c1 = nc1;
+                currentPair.r2 = nr2; currentPair.c2 = nc2;
+                updateUI();
+                return true;
+            }
+            return false;
+        }
+
+        function rotatePair() {
+            if (gameState !== 'PLAYING') return;
+            const nextRot = (currentPair.rotState + 1) % 4;
+            // 一時的に回転状態を変更して検証
+            const oldRot = currentPair.rotState;
+            const oldR2 = currentPair.r2, oldC2 = currentPair.c2;
+            
+            currentPair.rotState = nextRot;
+            updatePairCoordsByRot();
+
+            // はみ出し・衝突時の簡易補正（壁蹴り簡易版）
+            if (!canPlace(currentPair.r1, currentPair.c1) || !canPlace(currentPair.r2, currentPair.c2)) {
+                // 左右に1マスずらして入るか試す
+                if (canPlace(currentPair.r1, currentPair.c1 - 1) && canPlace(currentPair.r2, currentPair.c2 - 1)) {
+                    currentPair.c1 -= 1; currentPair.c2 -= 1;
+                } else if (canPlace(currentPair.r1, currentPair.c1 + 1) && canPlace(currentPair.r2, currentPair.c2 + 1)) {
+                    currentPair.c1 += 1; currentPair.c2 += 1;
+                } else if (canPlace(currentPair.r1 - 1, currentPair.c1) && canPlace(currentPair.r2 - 1, currentPair.c2)) {
+                    currentPair.r1 -= 1; currentPair.r2 -= 1;
+                } else {
+                    // 戻す
+                    currentPair.rotState = oldRot;
+                    currentPair.r2 = oldR2; currentPair.c2 = oldC2;
+                    return;
+                }
+            }
+            updateUI();
+        }
+
+        // --- 落下処理（ペア分離対応） ---
+        function tick() {
+            if (gameState !== 'PLAYING') return;
+
+            // ペアの個別落下判定
+            let canFall1 = canPlace(currentPair.r1 + 1, currentPair.c1);
+            let canFall2 = canPlace(currentPair.r2 + 1, currentPair.c2);
+
+            // どちらか、あるいは両方が落ちる場合
+            if (canFall1 || canFall2) {
+                // 下にある方を先に落とすなどの順序制御を考慮しつつ独立落下
+                if (currentPair.r1 >= currentPair.r2) {
+                    if (canFall1) currentPair.r1++;
+                    if (canFall2 && canPlace(currentPair.r2 + 1, currentPair.c2) && (currentPair.r2 + 1 !== currentPair.r1 || currentPair.c2 !== currentPair.c1)) {
+                        currentPair.r2++;
+                    }
+                } else {
+                    if (canFall2) currentPair.r2++;
+                    if (canFall1 && canPlace(currentPair.r1 + 1, currentPair.c1) && (currentPair.r1 + 1 !== currentPair.r2 || currentPair.c1 !== currentPair.c2)) {
+                        currentPair.r1++;
+                    }
+                }
+                updateUI();
+            } else {
+                // 2個ともこれ以上落ちない -> 着地確定
+                landPair();
+            }
+        }
+
+        function landPair() {
+            gameState = 'PROCESSING';
+            stopDropTimer();
+
+            // 盤面に固定
+            board[currentPair.r1][currentPair.c1] = currentPair.block1.val;
+            board[currentPair.r2][currentPair.c2] = currentPair.block2.val;
+            currentPair = null;
+
+            updateUI();
+
+            // 消去判定・連鎖ループの開始
+            currentChain = 0;
+            processChainLoop();
+        }
+
+        // --- 消去判定・連鎖エンジン ---
+        function processChainLoop() {
+            chainValEl.textContent = currentChain > 0 ? `${currentChain} 連鎖` : '-';
+
+            // 1. 盤面全体をスキャンして消去対象をマーク
+            const matchResult = scanAndFindMatches(board);
+
+            if (matchResult.matchedCoords.length > 0) {
+                currentChain++;
+                chainValEl.textContent = `${currentChain} 連鎖`;
+
+                // 得点計算（組み合わせスコア ＋ 連鎖ボーナス）
+                let turnScore = matchResult.baseScore;
+                if (currentChain >= 2) {
+                    let bonusIdx = Math.min(currentChain, CHAIN_BONUSES.length - 1);
+                    turnScore += CHAIN_BONUSES[bonusIdx];
+                }
+                score += turnScore;
+                scoreValEl.textContent = score;
+
+                // 2. 一括削除
+                matchResult.matchedCoords.forEach(pos => {
+                    board[pos.r][pos.c] = 0;
+                });
+                updateUI();
+
+                // 3. 重力落下（支えを失ったブロックを落とす）
+                setTimeout(() => {
+                    applyGravity();
+                    updateUI();
+                    // 4. さらなる消去判定（連鎖継続）
+                    setTimeout(processChainLoop, 300);
+                }, 300);
+
+            } else {
+                // 消去がなくなったらプレイヤー操作へ復帰
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('puzzle_777_highscore', highScore);
+                    highScoreValEl.textContent = highScore;
+                }
+                
+                // 次のペア出現
+                spawnPair();
+                if (gameState !== 'GAMEOVER') {
+                    gameState = 'PLAYING';
+                    startDropTimer();
+                }
+            }
+        }
+
+        // --- 判定アルゴリズム (横・縦の連続区間検索) ---
+        function scanAndFindMatches(grid) {
+            let matchedSet = new Set();
+            let baseScore = 0;
+
+            // 1. 横方向の走査
+            for (let r = 0; r < ROWS; r++) {
+                let c = 0;
+                while (c < COLS) {
+                    if (grid[r][c] === 0) { c++; continue; }
+                    // 連続区間を抽出
+                    let startC = c;
+                    while (c < COLS && grid[r][c] !== 0) { c++; }
+                    let endC = c - 1;
+                    
+                    // この連続区間 [startC, endC] 内の部分区間を全探索
+                    let segmentLength = (endC - startC) + 1;
+                    if (segmentLength >= 2) {
+                        // 部分区間をすべてチェック
+                        for (let i = startC; i <= endC; i++) {
+                            let currentSum = 0;
+                            let sevensCount = 0;
+                            let segmentBlocks = [];
+                            for (let j = i; j <= endC; j++) {
+                                let val = grid[r][j];
+                                currentSum += val;
+                                segmentBlocks.push({r: r, c: j});
+                                if (val === 7) sevensCount++;
+
+                                // 合計7判定 (部分区間長が2以上、または単体は対象外だが和が7)
+                                if (currentSum === 7 && segmentBlocks.length >= 2) {
+                                    baseScore += 70;
+                                    segmentBlocks.forEach(b => matchedSet.add(`${b.r},${b.c}`));
+                                }
+                            }
+                        }
+                    }
+
+                    // 7の特別ルール判定 (横に3個以上連続する7)
+                    let run7Start = -1;
+                    for (let colIdx = startC; colIdx <= endC; colIdx++) {
+                        if (grid[r][colIdx] === 7) {
+                            if (run7Start === -1) run7Start = colIdx;
+                        } else {
+                            if (run7Start !== -1) {
+                                let len = colIdx - run7Start;
+                                if (len >= 3) {
+                                    baseScore += len * 100; // 777特別消去スコア
+                                    for (let k = run7Start; k < colIdx; k++) {
+                                        matchedSet.add(`${r},${k}`);
+                                    }
+                                }
+                                run7Start = -1;
+                            }
+                        }
+                    }
+                    if (run7Start !== -1) {
+                        let len = (endC + 1) - run7Start;
+                        if (len >= 3) {
+                            baseScore += len * 100;
+                            for (let k = run7Start; k <= endC; k++) {
+                                matchedSet.add(`${r},${k}`);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. 縦方向の走査
+            for (let c = 0; c < COLS; c++) {
+                let r = 0;
+                while (r < ROWS) {
+                    if (grid[r][c] === 0) { r++; continue; }
+                    let startR = r;
+                    while (r < ROWS && grid[r][c] !== 0) { r++; }
+                    let endR = r - 1;
+
+                    let segmentLength = (endR - startR) + 1;
+                    if (segmentLength >= 2) {
+                        for (let i = startR; i <= endR; i++) {
+                            let currentSum = 0;
+                            let segmentBlocks = [];
+                            for (let j = i; j <= endR; j++) {
+                                let val = grid[j][c];
+                                currentSum += val;
+                                segmentBlocks.push({r: j, c: c});
+
+                                if (currentSum === 7 && segmentBlocks.length >= 2) {
+                                    baseScore += 70;
+                                    segmentBlocks.forEach(b => matchedSet.add(`${b.r},${b.c}`));
+                                }
+                            }
+                        }
+                    }
+
+                    // 7の特別ルール判定 (縦に3個以上連続する7)
+                    let run7Start = -1;
+                    for (let rowIdx = startR; rowIdx <= endR; rowIdx++) {
+                        if (grid[rowIdx][c] === 7) {
+                            if (run7Start === -1) run7Start = rowIdx;
+                        } else {
+                            if (run7Start !== -1) {
+                                let len = rowIdx - run7Start;
+                                if (len >= 3) {
+                                    baseScore += len * 100;
+                                    for (let k = run7Start; k < rowIdx; k++) {
+                                        matchedSet.add(`${k},${c}`);
+                                    }
+                                }
+                                run7Start = -1;
+                            }
+                        }
+                    }
+                    if (run7Start !== -1) {
+                        let len = (endR + 1) - run7Start;
+                        if (len >= 3) {
+                            baseScore += len * 100;
+                            for (let k = run7Start; k <= endR; k++) {
+                                matchedSet.add(`${k},${c}`);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // マップ文字列から座標オブジェクトの配列へ変換
+            let matchedCoords = [];
+            matchedSet.forEach(coordStr => {
+                let parts = coordStr.split(',');
+                matchedCoords.push({ r: parseInt(parts[0]), c: parseInt(parts[1]) });
+            });
+
+            return { matchedCoords, baseScore };
+        }
+
+        // --- 重力落下処理 ---
+        function applyGravity() {
+            for (let c = 0; c < COLS; c++) {
+                let writeRow = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (board[r][c] !== 0) {
+                        let val = board[r][c];
+                        board[r][c] = 0;
+                        board[writeRow][c] = val;
+                        writeRow--;
+                    }
+                }
+            }
+        }
+
+        // --- 描画・UI更新 ---
+        function updateUI() {
+            // ボード上の既存ブロック描画をクリア
+            const existingBlocks = boardEl.querySelectorAll('.block');
+            existingBlocks.forEach(b => b.remove());
+
+            // 固定済みブロックの描画
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    let val = board[r][c];
+                    if (val !== 0) {
+                        renderBlockElement(r, c, val);
+                    }
+                }
+            }
+
+            // 操作中ペアの描画
+            if (currentPair && gameState === 'PLAYING') {
+                renderBlockElement(currentPair.r1, currentPair.c1, currentPair.block1.val);
+                renderBlockElement(currentPair.r2, currentPair.c2, currentPair.block2.val);
+            }
+
+            // NEXT表示の更新
+            renderNextPreviews();
+        }
+
+        function renderBlockElement(r, c, val) {
+            const block = document.createElement('div');
+            block.className = `block c-${val}`;
+            block.textContent = val;
+            
+            // セル位置に基づくピクセル配置 (セルサイズ 33px)
+            block.style.top = `${r * 33}px`;
+            block.style.left = `${c * 33}px`;
+            boardEl.appendChild(block);
+        }
+
+        function renderNextPreviews() {
+            const n1El = document.getElementById('next1');
+            const n2El = document.getElementById('next2');
+            n1El.innerHTML = '';
+            n2El.innerHTML = '';
+
+            if (nextQueue.length >= 2) {
+                // NEXT 1
+                [nextQueue[0].block1, nextQueue[0].block2].forEach(b => {
+                    let div = document.createElement('div');
+                    div.className = `mini-block c-${b.val}`;
+                    div.textContent = b.val;
+                    n1El.appendChild(div);
+                });
+                // NEXT 2
+                [nextQueue[1].block1, nextQueue[1].block2].forEach(b => {
+                    let div = document.createElement('div');
+                    div.className = `mini-block c-${b.val}`;
+                    div.textContent = b.val;
+                    n2El.appendChild(div);
+                });
+            }
+        }
+
+        // --- タイマー制御 ---
+        function startDropTimer() {
+            stopDropTimer();
+            let interval = isSoftDropping ? SOFT_DROP_INTERVAL : DROP_INTERVAL;
+            dropTimer = setInterval(tick, interval);
+        }
+
+        function stopDropTimer() {
+            if (dropTimer) {
+                clearInterval(dropTimer);
+                dropTimer = null;
+            }
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            stopDropTimer();
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('screen-gameover').classList.remove('hidden');
+        }
+
+        // --- イベントリスナー設定 ---
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('retry-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('screen-pause').classList.add('hidden');
+            startGame();
+        });
+        document.getElementById('resume-btn').addEventListener('click', () => {
+            document.getElementById('screen-pause').classList.add('hidden');
+            gameState = 'PLAYING';
+            startDropTimer();
+        });
+        document.getElementById('pause-btn').addEventListener('click', () => {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSE';
+                stopDropTimer();
+                document.getElementById('screen-pause').classList.remove('hidden');
+            }
+        });
+
+        // キーボード操作
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== 'PLAYING') return;
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                    movePair(0, -1);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    movePair(0, 1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    if (!isSoftDropping) {
+                        isSoftDropping = true;
+                        startDropTimer();
+                    }
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case ' ':
+                    rotatePair();
+                    break;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if ((e.key === 'ArrowDown' || e.key === 's') && isSoftDropping) {
+                isSoftDropping = false;
+                if (gameState === 'PLAYING') startDropTimer();
+            }
+        });
+
+        // 画面内タッチボタン
+        document.getElementById('btn-left').addEventListener('click', () => movePair(0, -1));
+        document.getElementById('btn-right').addEventListener('click', () => movePair(0, 1));
+        document.getElementById('btn-rotate').addEventListener('click', rotatePair);
+        
+        const downBtn = document.getElementById('btn-down');
+        downBtn.addEventListener('mousedown', () => { isSoftDropping = true; startDropTimer(); });
+        downBtn.addEventListener('mouseup', () => { isSoftDropping = false; if (gameState === 'PLAYING') startDropTimer(); });
+        downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isSoftDropping = true; startDropTimer(); });
+        downBtn.addEventListener('touchend', (e) => { e.preventDefault(); isSoftDropping = false; if (gameState === 'PLAYING') startDropTimer(); });
+
+        // 初期描画
+        initBoardUI();
+    </script>
+</body>
+</html>
