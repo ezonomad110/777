@@ -268,7 +268,6 @@
             display: none !important;
         }
 
-        /* ネオンカラー定義 */
         .c-1 { background: var(--num-1); color: #030408; }
         .c-2 { color: #fff; background: var(--num-2); }
         .c-3 { color: #fff; background: var(--num-3); }
@@ -277,7 +276,7 @@
         .c-6 { background: var(--num-6); color: #030408; }
         .c-7 { background: var(--num-7); color: #030408; box-shadow: inset 0 0 12px #00f3ff, 0 0 20px #fff, 0 0 40px #00f3ff; }
 
-        /* TOTONOS譲りの点滅タメ演出 (puyo-clear) */
+        /* 消去前の点滅演出 (puyo-clear) */
         .block-flashing {
             animation: puyoClear 0.12s ease-in-out infinite alternate;
         }
@@ -313,8 +312,8 @@
                 <strong id="highscore-val">0</strong>
             </div>
             <div class="info-box">
-                <span>CHAIN</span>
-                <strong id="chain-val">-</strong>
+                <span>COMBO</span>
+                <strong id="combo-val">-</strong>
             </div>
         </div>
 
@@ -344,7 +343,7 @@
 
         <div id="screen-title" class="overlay">
             <h2>777</h2>
-            <p>サイバーネオン空間で数字を操り<br>コンボを繋ぐ次世代パズル</p>
+            <p>サイバーネオン空間で数字を操り<br>COMBOを繋ぐ次世代パズル</p>
             <button class="menu-btn" id="start-btn">GAME START</button>
         </div>
 
@@ -362,7 +361,6 @@
     </div>
 
     <script>
-        // --- Web Audio API 音響システム ---
         let audioCtx = null;
         let bgmInterval = null;
 
@@ -454,17 +452,16 @@
             }
         }
 
-        // --- ゲーム仕様定数 ---
         const COLS = 8;
         const ROWS = 12;
         const DROP_INTERVAL = 600;
         const SOFT_DROP_INTERVAL = 50;
-        const CHAIN_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
+        const COMBO_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
 
         let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
         let score = 0;
         let highScore = localStorage.getItem('puzzle_777_highscore') || 0;
-        let currentChain = 0;
+        let currentCombo = 0;
         let gameState = 'TITLE';
 
         let currentPair = null;
@@ -475,7 +472,7 @@
         const boardEl = document.getElementById('board');
         const scoreValEl = document.getElementById('score-val');
         const highScoreValEl = document.getElementById('highscore-val');
-        const chainValEl = document.getElementById('chain-val');
+        const comboValEl = document.getElementById('combo-val');
 
         function initBoardUI() {
             boardEl.innerHTML = '';
@@ -512,9 +509,9 @@
             startBGM();
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
             score = 0;
-            currentChain = 0;
+            currentCombo = 0;
             scoreValEl.textContent = score;
-            chainValEl.textContent = '-';
+            comboValEl.textContent = '-';
             initQueue();
             spawnPair();
             
@@ -653,34 +650,33 @@
             currentPair = null;
 
             updateUI();
-            currentChain = 0;
-            processChainLoop();
+            currentCombo = 0;
+            processComboLoop();
         }
 
-        function processChainLoop() {
-            chainValEl.textContent = currentChain > 0 ? `${currentChain} 連鎖` : '-';
-
+        function processComboLoop() {
             const matchResult = scanAndFindMatches(board);
 
             if (matchResult.matchedCoords.length > 0) {
-                currentChain++;
-                chainValEl.textContent = `${currentChain} 連鎖`;
+                currentCombo++;
+                comboValEl.textContent = `${currentCombo} COMBO`;
 
                 let turnScore = matchResult.baseScore;
-                if (currentChain >= 2) {
-                    let bonusIdx = Math.min(currentChain, CHAIN_BONUSES.length - 1);
-                    turnScore += CHAIN_BONUSES[bonusIdx];
+                if (currentCombo >= 2) {
+                    let bonusIdx = Math.min(currentCombo, COMBO_BONUSES.length - 1);
+                    turnScore += COMBO_BONUSES[bonusIdx];
                 }
                 score += turnScore;
                 scoreValEl.textContent = score;
 
-                // 1. 点滅演出（TOTONOS方式：消去対象のブロックを点滅させる）
+                // 点滅演出（全COMBO共通でブロックを点滅）
                 matchResult.matchedCoords.forEach(pos => {
                     const blockEl = document.querySelector(`[data-r="${pos.r}"][data-c="${pos.c}"]`);
                     if (blockEl) blockEl.classList.add('block-flashing');
                 });
 
-                if (matchResult.hasSpecial7) {
+                // 2 COMBO以上、または特別ルールのときにより派手な演出
+                if (matchResult.hasSpecial7 || currentCombo >= 2) {
                     playSFX('special777');
                     boardEl.classList.add('gold-flash-bg');
                     setTimeout(() => boardEl.classList.remove('gold-flash-bg'), 400);
@@ -688,7 +684,6 @@
                     playSFX('clear');
                 }
 
-                // 2. 点滅タメのあとに消去・重力落下
                 setTimeout(() => {
                     matchResult.matchedCoords.forEach(pos => {
                         board[pos.r][pos.c] = 0;
@@ -698,7 +693,7 @@
                     setTimeout(() => {
                         applyGravity();
                         updateUI();
-                        setTimeout(processChainLoop, 300);
+                        setTimeout(processComboLoop, 300);
                     }, 250);
                 }, 400);
 
@@ -717,11 +712,13 @@
             }
         }
 
+        // 縦横直線限定の消去判定
         function scanAndFindMatches(grid) {
             let matchedSet = new Set();
             let baseScore = 0;
             let hasSpecial7 = false;
 
+            // 1. 横方向の直線スキャン
             for (let r = 0; r < ROWS; r++) {
                 let c = 0;
                 while (c < COLS) {
@@ -748,6 +745,7 @@
                         }
                     }
 
+                    // 7の特別ルール（横に3個以上連続）
                     let run7Start = -1;
                     for (let colIdx = startC; colIdx <= endC; colIdx++) {
                         if (grid[r][colIdx] === 7) {
@@ -775,6 +773,7 @@
                 }
             }
 
+            // 2. 縦方向の直線スキャン
             for (let c = 0; c < COLS; c++) {
                 let r = 0;
                 while (r < ROWS) {
@@ -801,6 +800,7 @@
                         }
                     }
 
+                    // 7の特別ルール（縦に3個以上連続）
                     let run7Start = -1;
                     for (let rowIdx = startR; rowIdx <= endR; rowIdx++) {
                         if (grid[rowIdx][c] === 7) {
