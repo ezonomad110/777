@@ -606,66 +606,72 @@
             }
         }
 
-        // グラディウス風ファミコンサウンド（高速アルペジオ＆サイバー機械音）
+        // 改良版BGM（64ステップ・少し長めのメロディー展開で聞き疲れを軽減）
         function startBGM() {
             stopBGM();
             let step = 0;
-            const bassNotes = [110.00, 110.00, 130.81, 146.83];
-            const arpNotes = [220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25, 783.99];
+            const melodyNotes = [
+                330.63, 392.00, 440.00, 523.25,  // 上昇フレーズ
+                587.33, 523.25, 440.00, 392.00,  // 下降フレーズ
+                349.23, 392.00, 440.00, 493.88,  // 展開フレーズ
+                523.25, 440.00, 392.00, 329.63   // 解決フレーズ
+            ];
+            const bassNotes = [110.00, 110.00, 130.81, 98.00];
 
             bgmInterval = setInterval(() => {
                 if (!audioCtx || audioCtx.state !== 'running') return;
                 const now = audioCtx.currentTime;
 
-                // 1. 高速アルペジオ（矩形波・チープなファミコン風）
+                // 1. メインの矩形波（なめらかな長めフレーズ）
                 const osc1 = audioCtx.createOscillator();
                 const gain1 = audioCtx.createGain();
                 osc1.type = 'square';
-                let noteFreq = arpNotes[(step * 2) % arpNotes.length];
+                let noteFreq = melodyNotes[step % melodyNotes.length];
                 osc1.frequency.setValueAtTime(noteFreq, now);
 
-                gain1.gain.setValueAtTime(0.04, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                gain1.gain.setValueAtTime(0.035, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
                 osc1.connect(gain1);
                 gain1.connect(audioCtx.destination);
                 osc1.start(now);
-                osc1.stop(now + 0.08);
+                osc1.stop(now + 0.12);
 
-                // 2. 疾走感を出す裏拍の合いの手（ノコギリ波）
+                // 2. ノコギリ波のハモリ（裏拍）
                 if (step % 2 === 1) {
                     const osc2 = audioCtx.createOscillator();
                     const gain2 = audioCtx.createGain();
                     osc2.type = 'sawtooth';
-                    osc2.frequency.setValueAtTime(arpNotes[(step * 3) % arpNotes.length] * 1.5, now);
+                    osc2.frequency.setValueAtTime(melodyNotes[(step + 4) % melodyNotes.length] * 0.75, now);
 
-                    gain2.gain.setValueAtTime(0.02, now);
-                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    gain2.gain.setValueAtTime(0.015, now);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
                     osc2.connect(gain2);
                     gain2.connect(audioCtx.destination);
                     osc2.start(now);
-                    osc2.stop(now + 0.05);
+                    osc2.stop(now + 0.08);
                 }
 
-                // 3. 低音のリズムベース（三角波）
+                // 3. 低音ベース（4ステップごと）
                 if (step % 4 === 0) {
                     const bass = audioCtx.createOscillator();
                     const bassGain = audioCtx.createGain();
                     bass.type = 'triangle';
-                    bass.frequency.setValueAtTime(bassNotes[(Math.floor(step / 4)) % bassNotes.length], now);
+                    let bassIdx = Math.floor(step / 4) % bassNotes.length;
+                    bass.frequency.setValueAtTime(bassNotes[bassIdx], now);
 
-                    bassGain.gain.setValueAtTime(0.07, now);
-                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    bassGain.gain.setValueAtTime(0.06, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
                     bass.connect(bassGain);
                     bassGain.connect(audioCtx.destination);
                     bass.start(now);
-                    bass.stop(now + 0.2);
+                    bass.stop(now + 0.25);
                 }
 
-                step++;
-            }, 90);
+                step = (step + 1) % 64;
+            }, 110);
         }
 
         function stopBGM() {
