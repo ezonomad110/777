@@ -331,7 +331,7 @@
             color: #fff;
         }
 
-        /* Rule Modal (English) */
+        /* Rule Modal */
         .rule-modal {
             display: none;
             position: absolute;
@@ -493,7 +493,7 @@
             <button class="sub-btn" id="rule-open-btn">HOW TO PLAY</button>
         </div>
 
-        <!-- Rule Modal (English Only) -->
+        <!-- Rule Modal -->
         <div id="rule-modal" class="rule-modal">
             <div class="rule-content">
                 <h3>HOW TO PLAY</h3>
@@ -606,24 +606,66 @@
             }
         }
 
+        // グラディウス風ファミコンサウンド（高速アルペジオ＆サイバー機械音）
         function startBGM() {
             stopBGM();
-            let noteIdx = 0;
-            const notes = [220, 246.94, 293.66, 329.63, 392.00, 440];
+            let step = 0;
+            const bassNotes = [110.00, 110.00, 130.81, 146.83];
+            const arpNotes = [220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25, 783.99];
+
             bgmInterval = setInterval(() => {
                 if (!audioCtx || audioCtx.state !== 'running') return;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(notes[noteIdx % notes.length], audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-                noteIdx++;
-            }, 350);
+                const now = audioCtx.currentTime;
+
+                // 1. 高速アルペジオ（矩形波・チープなファミコン風）
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'square';
+                let noteFreq = arpNotes[(step * 2) % arpNotes.length];
+                osc1.frequency.setValueAtTime(noteFreq, now);
+
+                gain1.gain.setValueAtTime(0.04, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.08);
+
+                // 2. 疾走感を出す裏拍の合いの手（ノコギリ波）
+                if (step % 2 === 1) {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'sawtooth';
+                    osc2.frequency.setValueAtTime(arpNotes[(step * 3) % arpNotes.length] * 1.5, now);
+
+                    gain2.gain.setValueAtTime(0.02, now);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start(now);
+                    osc2.stop(now + 0.05);
+                }
+
+                // 3. 低音のリズムベース（三角波）
+                if (step % 4 === 0) {
+                    const bass = audioCtx.createOscillator();
+                    const bassGain = audioCtx.createGain();
+                    bass.type = 'triangle';
+                    bass.frequency.setValueAtTime(bassNotes[(Math.floor(step / 4)) % bassNotes.length], now);
+
+                    bassGain.gain.setValueAtTime(0.07, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+                    bass.connect(bassGain);
+                    bassGain.connect(audioCtx.destination);
+                    bass.start(now);
+                    bass.stop(now + 0.2);
+                }
+
+                step++;
+            }, 90);
         }
 
         function stopBGM() {
@@ -638,7 +680,7 @@
         const DROP_INTERVAL = 600;
         const SOFT_DROP_INTERVAL = 50;
         const COMBO_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
-        const CELL_SIZE = 40; // Pixel size per cell
+        const CELL_SIZE = 40;
 
         let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
         let score = 0;
