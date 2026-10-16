@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -418,7 +419,6 @@
             100% { transform: scale(1.12); filter: brightness(3.5) drop-shadow(0 0 15px #fff); opacity: 0.3; }
         }
 
-        /* 未来感あふれる超ド級777特殊エフェクト */
         .cyber-matrix-explosion {
             animation: matrixExplosion 0.5s cubic-bezier(0.11, 0, 0.5, 1) forwards;
         }
@@ -519,7 +519,7 @@
 
                 <div class="rule-section">
                     <h4>🔥 777スペシャルボーナス</h4>
-                    <p>「7」が縦または横に**3個以上連続**すると、特殊消去が発動！7が含まれる行または列を丸ごと全消去する未来感抜群の爽快演出が発生します！</p>
+                    <p>「7」が縦または横に**3個以上連続**すると特殊消去が発動！7が含まれる行または列を丸ごと全消去し、大量得点を獲得できます！</p>
                 </div>
 
                 <div class="rule-section">
@@ -688,7 +688,6 @@
         const ROWS = 12;
         const DROP_INTERVAL = 600;
         const SOFT_DROP_INTERVAL = 50;
-        const COMBO_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
         const CELL_SIZE = 40;
         const EMPTY = -1;
 
@@ -720,16 +719,17 @@
             highScoreValEl.textContent = highScore;
         }
 
-        /* 0〜2を各15%、3〜7を各11%に調整した確率抽選テーブル */
+        /* 確定版出現確率（合計100%）
+           0:16%, 1:16%, 2:16%, 3:14%, 4:12%, 5:10%, 6:10%, 7:6% */
         function getRandomNumber() {
             const rand = Math.random() * 100;
-            if (rand < 15) return 0;
-            if (rand < 30) return 1;
-            if (rand < 45) return 2;
-            if (rand < 56) return 3;
-            if (rand < 67) return 4;
-            if (rand < 78) return 5;
-            if (rand < 89) return 6;
+            if (rand < 16) return 0;
+            if (rand < 32) return 1;
+            if (rand < 48) return 2;
+            if (rand < 62) return 3;
+            if (rand < 74) return 4;
+            if (rand < 84) return 5;
+            if (rand < 94) return 6;
             return 7;
         }
 
@@ -851,7 +851,7 @@
             let canFall2 = canPlace(currentPair.r2 + 1, currentPair.c2);
             
             if (currentPair.r1 + 1 === currentPair.r2 && currentPair.c1 === currentPair.c2) canFall1 = canFall2 && canPlace(currentPair.r1 + 1, currentPair.c1);
-            if (currentPair.r2 + 1 === currentPair.r1 && currentPair.c2 === currentPair.c1) canFall2 = canFall1 && canPlace(currentPair.r2 + 1, currentPair.c2);
+            if (currentPair.r2 + 1 === currentPair.r1 && currentPair.c2 === currentPair.c1) canFall2 = canFall1 && canPlace(currentPair.r1 + 1, currentPair.c2);
 
             if (!canFall1 && !canFall2) {
                 landPair();
@@ -898,6 +898,15 @@
             processComboLoop();
         }
 
+        /* 新コンボ倍率計算 */
+        function getComboMultiplier(combo) {
+            if (combo <= 1) return 1.0;
+            if (combo === 2) return 1.5;
+            if (combo === 3) return 2.0;
+            if (combo === 4) return 2.5;
+            return 3.0; // 5コンボ以上
+        }
+
         function processComboLoop() {
             const matchResult = scanAndFindMatches(board);
 
@@ -905,11 +914,10 @@
                 currentCombo++;
                 comboValEl.textContent = `${currentCombo}`;
 
-                let turnScore = matchResult.baseScore;
-                if (currentCombo >= 2) {
-                    let bonusIdx = Math.min(currentCombo, COMBO_BONUSES.length - 1);
-                    turnScore += COMBO_BONUSES[bonusIdx];
-                }
+                // 新スコア計算（基本得点 × コンボ倍率）
+                let comboMult = getComboMultiplier(currentCombo);
+                let turnScore = Math.floor(matchResult.baseScore * comboMult);
+                
                 score += turnScore;
                 scoreValEl.textContent = score;
 
@@ -956,13 +964,30 @@
             }
         }
 
-        /* 通常消去 ＆ 777特殊ボーナス（3個以上連続の7で対応する行・列全消去）の統合スキャン */
+        /* 10点ベース・ブロック数依存スコア ＆ 777特殊ボーナスのスキャン判定 */
         function scanAndFindMatches(grid) {
             let matchedSet = new Set();
             let baseScore = 0;
             let isSpecial777 = false;
 
-            // 1. 横方向スキャン（通常合計7 ＆ 7の連続チェック）
+            // 通常消去の点数計算関数（3個=10点, 4個=30点, 5個=60点, 6個=100点, 7個+=150点+50点/個）
+            function getNormalClearScore(count) {
+                if (count < 3) return 0;
+                if (count === 3) return 10;
+                if (count === 4) return 30;
+                if (count === 5) return 60;
+                if (count === 6) return 100;
+                return 150 + (count - 7) * 50;
+            }
+
+            // 特殊消去777の点数計算関数（3個=100点, 4個=250点, 5個+=500点）
+            function getSpecial777Score(count) {
+                if (count === 3) return 100;
+                if (count === 4) return 250;
+                return 500;
+            }
+
+            // 1. 横方向スキャン
             for (let r = 0; r < ROWS; r++) {
                 let c = 0;
                 while (c < COLS) {
@@ -985,8 +1010,7 @@
                         }
                         if (count7 >= 3) {
                             isSpecial777 = true;
-                            baseScore += count7 * 250;
-                            // 横に7がN個連続 -> 対応する「縦の列(Col)」をN列分すべて全消去
+                            baseScore += getSpecial777Score(count7);
                             seg7.forEach(colIdx => {
                                 for (let row = 0; row < ROWS; row++) {
                                     if (grid[row][colIdx] !== EMPTY) {
@@ -1006,7 +1030,7 @@
                             segment.push({r: r, c: j});
 
                             if (segment.length >= 3 && sum === 7) {
-                                baseScore += 100;
+                                baseScore += getNormalClearScore(segment.length);
                                 segment.forEach(b => matchedSet.add(`${b.r},${b.c}`));
                             }
                         }
@@ -1014,7 +1038,7 @@
                 }
             }
 
-            // 2. 縦方向スキャン（通常合計7 ＆ 7の連続チェック）
+            // 2. 縦方向スキャン
             for (let c = 0; c < COLS; c++) {
                 let r = 0;
                 while (r < ROWS) {
@@ -1037,8 +1061,7 @@
                         }
                         if (count7 >= 3) {
                             isSpecial777 = true;
-                            baseScore += count7 * 250;
-                            // 縦に7がN個連続 -> 対応する「横の行(Row)」をN行分すべて全消去
+                            baseScore += getSpecial777Score(count7);
                             seg7.forEach(rowIdx => {
                                 for (let col = 0; col < COLS; col++) {
                                     if (grid[rowIdx][col] !== EMPTY) {
@@ -1058,7 +1081,7 @@
                             segment.push({r: j, c: c});
 
                             if (segment.length >= 3 && sum === 7) {
-                                baseScore += 100;
+                                baseScore += getNormalClearScore(segment.length);
                                 segment.forEach(b => matchedSet.add(`${b.r},${b.c}`));
                             }
                         }
