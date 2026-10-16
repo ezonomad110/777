@@ -327,7 +327,6 @@
             color: #fff;
         }
 
-        /* Rule Modal (日本語版) */
         .rule-modal {
             display: none;
             position: absolute;
@@ -419,13 +418,38 @@
             100% { transform: scale(1.12); filter: brightness(3.5) drop-shadow(0 0 15px #fff); opacity: 0.3; }
         }
 
-        .gold-flash-bg {
-            animation: goldFlashBg 0.4s ease-in-out;
+        /* 未来感あふれる超ド級777特殊エフェクト */
+        .cyber-matrix-explosion {
+            animation: matrixExplosion 0.5s cubic-bezier(0.11, 0, 0.5, 1) forwards;
         }
-        @keyframes goldFlashBg {
-            0% { border-color: #00f3ff; box-shadow: 0 0 20px #00f3ff; }
-            50% { border-color: #ffd700; box-shadow: 0 0 50px #ffd700, inset 0 0 30px #ffd700; background: rgba(255, 215, 0, 0.2); }
-            100% { border-color: #00f3ff; box-shadow: 0 0 20px #00f3ff; }
+        @keyframes matrixExplosion {
+            0% { 
+                border-color: #ffd700; 
+                box-shadow: 0 0 40px #ffd700, inset 0 0 40px #ffd700; 
+                transform: scale(1) translate(0, 0);
+                filter: brightness(1) hue-rotate(0deg);
+            }
+            20% { 
+                transform: scale(1.03) translate(-4px, 3px);
+                filter: brightness(4) hue-rotate(90deg) drop-shadow(0 0 30px #00f3ff);
+                background: rgba(0, 243, 255, 0.4);
+            }
+            40% { 
+                transform: scale(0.97) translate(4px, -3px);
+                filter: brightness(4) hue-rotate(270deg) drop-shadow(0 0 40px #ff00c8);
+                background: rgba(255, 0, 200, 0.4);
+            }
+            70% {
+                transform: scale(1.02) translate(-2px, 1px);
+                filter: brightness(2.5) hue-rotate(180deg);
+                background: rgba(255, 215, 0, 0.3);
+            }
+            100% { 
+                border-color: #00f3ff; 
+                box-shadow: 0 0 25px rgba(0, 243, 255, 0.5), inset 0 0 20px rgba(0, 243, 255, 0.2); 
+                transform: scale(1) translate(0, 0);
+                filter: brightness(1) hue-rotate(0deg);
+            }
         }
     </style>
 </head>
@@ -484,7 +508,6 @@
             <button class="sub-btn" id="rule-open-btn">HOW TO PLAY</button>
         </div>
 
-        <!-- ルール説明モーダル（日本語） -->
         <div id="rule-modal" class="rule-modal">
             <div class="rule-content">
                 <h3>遊び方</h3>
@@ -495,22 +518,16 @@
                 </div>
 
                 <div class="rule-section">
+                    <h4>🔥 777スペシャルボーナス</h4>
+                    <p>「7」が縦または横に**3個以上連続**すると、特殊消去が発動！7が含まれる行または列を丸ごと全消去する未来感抜群の爽快演出が発生します！</p>
+                </div>
+
+                <div class="rule-section">
                     <h4>🕹️ 操作方法</h4>
                     <ul>
                         <li><span class="key">◀</span> / <span class="key">▶</span> : 左右移動</li>
                         <li><span class="key">▼</span> : ソフトドロップ</li>
                         <li><span class="key">↻</span> : ブロック回転</li>
-                        <li>PC: <span class="key">A/D</span> または矢印キー、回転は <span class="key">W</span> / <span class="key">Space</span></li>
-                    </ul>
-                </div>
-
-                <div class="rule-section">
-                    <h4>💥 消去のルール</h4>
-                    <ul>
-                        <li>直線上で連続する**3個以上**のブロックで合計が**ちょうど7**になると消えます（例: <span class="key">0, 2, 5</span> や <span class="key">1, 2, 4</span> など）。</li>
-                        <li><span class="key">0</span>（グレー）は合計値に加算されませんが、**個数には含まれます**（例: `0-2-5` は計3個なので消える）。</li>
-                        <li>合計が7でも、2個のみの組み合わせ（例: <span class="key">3, 4</span>）や合計が8以上のものは消えません。</li>
-                        <li>**2 COMBO以上**で演出とボーナススコアが強化されます！</li>
                     </ul>
                 </div>
 
@@ -587,12 +604,12 @@
                 osc.stop(now + 0.3);
             } else if (type === 'special777') {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.exponentialRampToValueAtTime(1760, now + 0.3);
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.frequency.setValueAtTime(330, now);
+                osc.frequency.exponentialRampToValueAtTime(1320, now + 0.4);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
                 osc.start(now);
-                osc.stop(now + 0.4);
+                osc.stop(now + 0.5);
             }
         }
 
@@ -703,8 +720,17 @@
             highScoreValEl.textContent = highScore;
         }
 
+        /* 0〜2を各15%、3〜7を各11%に調整した確率抽選テーブル */
         function getRandomNumber() {
-            return Math.floor(Math.random() * 8); // 0〜7
+            const rand = Math.random() * 100;
+            if (rand < 15) return 0;
+            if (rand < 30) return 1;
+            if (rand < 45) return 2;
+            if (rand < 56) return 3;
+            if (rand < 67) return 4;
+            if (rand < 78) return 5;
+            if (rand < 89) return 6;
+            return 7;
         }
 
         function createPair() {
@@ -892,10 +918,12 @@
                     if (blockEl) blockEl.classList.add('block-flashing');
                 });
 
-                if (currentCombo >= 2) {
+                if (matchResult.isSpecial777) {
                     playSFX('special777');
-                    boardEl.classList.add('gold-flash-bg');
-                    setTimeout(() => boardEl.classList.remove('gold-flash-bg'), 400);
+                    boardEl.classList.add('cyber-matrix-explosion');
+                    setTimeout(() => boardEl.classList.remove('cyber-matrix-explosion'), 500);
+                } else if (currentCombo >= 2) {
+                    playSFX('special777');
                 } else {
                     playSFX('clear');
                 }
@@ -911,7 +939,7 @@
                         updateUI();
                         setTimeout(processComboLoop, 300);
                     }, 250);
-                }, 400);
+                }, matchResult.isSpecial777 ? 500 : 400);
 
             } else {
                 if (score > highScore) {
@@ -928,10 +956,13 @@
             }
         }
 
+        /* 通常消去 ＆ 777特殊ボーナス（3個以上連続の7で対応する行・列全消去）の統合スキャン */
         function scanAndFindMatches(grid) {
             let matchedSet = new Set();
             let baseScore = 0;
+            let isSpecial777 = false;
 
+            // 1. 横方向スキャン（通常合計7 ＆ 7の連続チェック）
             for (let r = 0; r < ROWS; r++) {
                 let c = 0;
                 while (c < COLS) {
@@ -940,6 +971,33 @@
                     while (c < COLS && grid[r][c] !== EMPTY) { c++; }
                     let endC = c - 1;
 
+                    // 7の連続チェック（横3個以上）
+                    for (let i = startC; i <= endC; i++) {
+                        let count7 = 0;
+                        let seg7 = [];
+                        for (let j = i; j <= endC; j++) {
+                            if (grid[r][j] === 7) {
+                                count7++;
+                                seg7.push(j);
+                            } else {
+                                break;
+                            }
+                        }
+                        if (count7 >= 3) {
+                            isSpecial777 = true;
+                            baseScore += count7 * 250;
+                            // 横に7がN個連続 -> 対応する「縦の列(Col)」をN列分すべて全消去
+                            seg7.forEach(colIdx => {
+                                for (let row = 0; row < ROWS; row++) {
+                                    if (grid[row][colIdx] !== EMPTY) {
+                                        matchedSet.add(`${row},${colIdx}`);
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    // 通常の合計7消去スキャン
                     for (let i = startC; i <= endC; i++) {
                         let sum = 0;
                         let segment = [];
@@ -956,6 +1014,7 @@
                 }
             }
 
+            // 2. 縦方向スキャン（通常合計7 ＆ 7の連続チェック）
             for (let c = 0; c < COLS; c++) {
                 let r = 0;
                 while (r < ROWS) {
@@ -964,6 +1023,33 @@
                     while (r < ROWS && grid[r][c] !== EMPTY) { r++; }
                     let endR = r - 1;
 
+                    // 7の連続チェック（縦3個以上）
+                    for (let i = startR; i <= endR; i++) {
+                        let count7 = 0;
+                        let seg7 = [];
+                        for (let j = i; j <= endR; j++) {
+                            if (grid[j][c] === 7) {
+                                count7++;
+                                seg7.push(j);
+                            } else {
+                                break;
+                            }
+                        }
+                        if (count7 >= 3) {
+                            isSpecial777 = true;
+                            baseScore += count7 * 250;
+                            // 縦に7がN個連続 -> 対応する「横の行(Row)」をN行分すべて全消去
+                            seg7.forEach(rowIdx => {
+                                for (let col = 0; col < COLS; col++) {
+                                    if (grid[rowIdx][col] !== EMPTY) {
+                                        matchedSet.add(`${rowIdx},${col}`);
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    // 通常の合計7消去スキャン
                     for (let i = startR; i <= endR; i++) {
                         let sum = 0;
                         let segment = [];
@@ -986,7 +1072,7 @@
                 matchedCoords.push({ r: parseInt(parts[0]), c: parseInt(parts[1]) });
             });
 
-            return { matchedCoords, baseScore };
+            return { matchedCoords, baseScore, isSpecial777 };
         }
 
         function applyGravity() {
