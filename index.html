@@ -759,10 +759,10 @@
             const r1 = currentPair.r1;
             const c1 = currentPair.c1;
             switch(currentPair.rotState) {
-                case 0: currentPair.r2 = r1 - 1; currentPair.c2 = c1; break;
-                case 1: currentPair.r2 = r1; currentPair.c2 = c1 + 1; break;
-                case 2: currentPair.r2 = r1 + 1; currentPair.c2 = c1; break;
-                case 3: currentPair.r2 = r1; currentPair.c2 = c1 - 1; break; // 修正済
+                case 0: currentPair.r2 = r1 - 1; currentPair.c2 = c1; break; // 上
+                case 1: currentPair.r2 = r1;     currentPair.c2 = c1 + 1; break; // 右
+                case 2: currentPair.r2 = r1 + 1; currentPair.c2 = c1; break; // 下
+                case 3: currentPair.r2 = r1;     currentPair.c2 = c1 - 1; break; // 左
             }
         }
 
@@ -793,11 +793,13 @@
             if (gameState !== 'PLAYING') return;
             const nextRot = (currentPair.rotState + 1) % 4;
             const oldRot = currentPair.rotState;
+            const oldR1 = currentPair.r1, oldC1 = currentPair.c1;
             const oldR2 = currentPair.r2, oldC2 = currentPair.c2;
             
             currentPair.rotState = nextRot;
             updatePairCoordsByRot();
 
+            // 壁蹴り（ウォールキック）処理
             if (!canPlace(currentPair.r1, currentPair.c1) || !canPlace(currentPair.r2, currentPair.c2)) {
                 if (canPlace(currentPair.r1, currentPair.c1 - 1) && canPlace(currentPair.r2, currentPair.c2 - 1)) {
                     currentPair.c1 -= 1; currentPair.c2 -= 1;
@@ -806,7 +808,9 @@
                 } else if (canPlace(currentPair.r1 - 1, currentPair.c1) && canPlace(currentPair.r2 - 1, currentPair.c2)) {
                     currentPair.r1 -= 1; currentPair.r2 -= 1;
                 } else {
+                    // 回転不可の場合は元に戻す
                     currentPair.rotState = oldRot;
+                    currentPair.r1 = oldR1; currentPair.c1 = oldC1;
                     currentPair.r2 = oldR2; currentPair.c2 = oldC2;
                     return;
                 }
