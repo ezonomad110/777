@@ -401,7 +401,6 @@
             display: none !important;
         }
 
-        /* 数字カラー別クラス */
         .c-0 { background: var(--num-0); color: #ffffff; }
         .c-1 { background: var(--num-1); color: #030408; }
         .c-2 { color: #fff; background: var(--num-2); }
@@ -672,7 +671,7 @@
         const SOFT_DROP_INTERVAL = 50;
         const COMBO_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
         const CELL_SIZE = 40;
-        const EMPTY = -1; // 空マスの定義を -1 に設定（0はブロックの数値として使用するため）
+        const EMPTY = -1;
 
         let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(EMPTY));
         let score = 0;
@@ -702,9 +701,8 @@
             highScoreValEl.textContent = highScore;
         }
 
-        // 0〜7のランダムな数字を生成（0を新規追加）
         function getRandomNumber() {
-            return Math.floor(Math.random() * 8); // 0, 1, 2, 3, 4, 5, 6, 7
+            return Math.floor(Math.random() * 8); // 0〜7
         }
 
         function createPair() {
@@ -764,7 +762,7 @@
                 case 0: currentPair.r2 = r1 - 1; currentPair.c2 = c1; break;
                 case 1: currentPair.r2 = r1; currentPair.c2 = c1 + 1; break;
                 case 2: currentPair.r2 = r1 + 1; currentPair.c2 = c1; break;
-                case 3: currentPair.r2 = r1; currentPair.c3 = c1 - 1; break;
+                case 3: currentPair.r2 = r1; currentPair.c2 = c1 - 1; break; // 修正済
             }
         }
 
@@ -926,12 +924,10 @@
             }
         }
 
-        // 新ルール消去判定ロジック：連続する3個以上のブロックで合計がちょうど7になる組み合わせのみを抽出
         function scanAndFindMatches(grid) {
             let matchedSet = new Set();
             let baseScore = 0;
 
-            // 1. 横方向スキャン
             for (let r = 0; r < ROWS; r++) {
                 let c = 0;
                 while (c < COLS) {
@@ -940,7 +936,6 @@
                     while (c < COLS && grid[r][c] !== EMPTY) { c++; }
                     let endC = c - 1;
 
-                    // 連続ブロックセグメント
                     for (let i = startC; i <= endC; i++) {
                         let sum = 0;
                         let segment = [];
@@ -948,7 +943,6 @@
                             sum += grid[r][j];
                             segment.push({r: r, c: j});
 
-                            // 条件: ブロック数3個以上 & 合計がちょうど7
                             if (segment.length >= 3 && sum === 7) {
                                 baseScore += 100;
                                 segment.forEach(b => matchedSet.add(`${b.r},${b.c}`));
@@ -958,7 +952,6 @@
                 }
             }
 
-            // 2. 縦方向スキャン
             for (let c = 0; c < COLS; c++) {
                 let r = 0;
                 while (r < ROWS) {
@@ -967,7 +960,6 @@
                     while (r < ROWS && grid[r][c] !== EMPTY) { r++; }
                     let endR = r - 1;
 
-                    // 連続ブロックセグメント
                     for (let i = startR; i <= endR; i++) {
                         let sum = 0;
                         let segment = [];
@@ -975,7 +967,6 @@
                             sum += grid[j][c];
                             segment.push({r: j, c: c});
 
-                            // 条件: ブロック数3個以上 & 合計がちょうど7
                             if (segment.length >= 3 && sum === 7) {
                                 baseScore += 100;
                                 segment.forEach(b => matchedSet.add(`${b.r},${b.c}`));
@@ -1081,7 +1072,6 @@
             document.getElementById('screen-gameover').classList.remove('hidden');
         }
 
-        // Event Listeners
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('retry-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', () => {
