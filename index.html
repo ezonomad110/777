@@ -1,5 +1,6 @@
+
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -19,6 +20,8 @@
             --num-5: #ff2a2a;
             --num-6: #ff9900;
             --num-7: #ffffff;
+            
+            --cell-size: 40px;
         }
 
         * {
@@ -73,50 +76,136 @@
             font-weight: 900;
         }
 
-        .info-panel {
-            display: flex;
-            justify-content: space-between;
+        /* 画面上部レイアウト（左：SCORE/HIGH/COMBO、中：NEXT1、右：NEXT2 & PAUSE） */
+        .top-dashboard {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 12px;
             width: 100%;
-            padding: 6px 12px;
-            font-size: 0.9rem;
+            align-items: center;
+            padding: 8px 12px;
             background: rgba(0, 243, 255, 0.05);
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid rgba(0, 243, 255, 0.2);
             box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.05);
         }
 
+        /* 左端: SCORE, HIGH SCORE, COMBO 縦並び */
+        .scores-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            line-height: 1.1;
+        }
+
         .info-box span {
-            display: block;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #00f3ff;
             letter-spacing: 1px;
+            min-width: 68px;
         }
 
         .info-box strong {
-            font-size: 1.15rem;
+            font-size: 0.95rem;
             text-shadow: 0 0 8px rgba(255,255,255,0.7);
+        }
+
+        /* NEXT 容器 */
+        .next-box {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 8px;
+            padding: 4px 8px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+            min-width: 65px;
+        }
+
+        .next-box span {
+            font-size: 0.6rem;
+            color: #00f3ff;
+            display: block;
+            margin-bottom: 2px;
+            letter-spacing: 1px;
+        }
+
+        .next-preview {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 28px;
+        }
+
+        .mini-block {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: inset 0 0 6px rgba(255,255,255,0.6), 0 0 8px currentColor;
+        }
+
+        .top-right-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-pause-btn {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+            transition: all 0.1s ease;
+        }
+
+        .icon-pause-btn:active {
+            transform: scale(0.9);
+            background: rgba(0, 243, 255, 0.4);
         }
 
         .main-content {
             display: flex;
-            flex-direction: row;
-            gap: 12px;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            flex-grow: 1;
+            padding: 6px 0;
         }
 
+        /* 拡大したボード（320px × 480px） */
         #board {
             position: relative;
-            width: 264px;
-            height: 396px;
+            width: calc(var(--cell-size) * 8);
+            height: calc(var(--cell-size) * 12);
             background: rgba(2, 4, 8, 0.95);
             border: 2px solid #00f3ff;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.5), inset 0 0 20px rgba(0, 243, 255, 0.2);
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(12, 1fr);
             overflow: hidden;
-            border-radius: 4px;
+            border-radius: 6px;
         }
 
         .cell {
@@ -125,69 +214,24 @@
 
         .block {
             position: absolute;
-            width: 33px;
-            height: 33px;
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             border-radius: 6px;
             box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 0 12px currentColor;
             transition: transform 0.04s ease;
             z-index: 2;
         }
 
-        .side-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 90px;
-        }
-
-        .next-container {
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            border-radius: 8px;
-            padding: 8px;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
-        }
-
-        .next-container span {
-            font-size: 0.7rem;
-            color: #00f3ff;
-            display: block;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
-
-        .next-preview {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            height: 70px;
-            justify-content: center;
-        }
-
-        .mini-block {
-            width: 26px;
-            height: 26px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: bold;
-            box-shadow: inset 0 0 6px rgba(255,255,255,0.6), 0 0 8px currentColor;
-        }
-
-        /* 操作コントローラー */
+        /* 操作コントローラー（記号のみ） */
         .controls {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 10px;
             width: 100%;
             margin-top: 5px;
         }
@@ -196,13 +240,16 @@
             background: linear-gradient(135deg, rgba(0,243,255,0.25), rgba(43,101,255,0.4));
             border: 1px solid #00f3ff;
             color: #fff;
-            padding: 14px 0;
-            border-radius: 10px;
-            font-size: 1rem;
+            padding: 16px 0;
+            border-radius: 12px;
+            font-size: 1.4rem;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
             transition: all 0.08s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .ctrl-btn:active {
@@ -263,7 +310,6 @@
             box-shadow: 0 0 30px #00f3ff, 0 0 60px #ff00c8;
         }
 
-        /* サブボタン（ルール説明用など） */
         .sub-btn {
             background: transparent;
             border: 2px solid #00f3ff;
@@ -285,7 +331,7 @@
             color: #fff;
         }
 
-        /* ルール説明用モーダルスタイル */
+        /* Rule Modal (English) */
         .rule-modal {
             display: none;
             position: absolute;
@@ -368,7 +414,6 @@
         .c-6 { background: var(--num-6); color: #030408; }
         .c-7 { background: var(--num-7); color: #030408; box-shadow: inset 0 0 12px #00f3ff, 0 0 20px #fff, 0 0 40px #00f3ff; }
 
-        /* 消去前の点滅演出 */
         .block-flashing {
             animation: puyoClear 0.12s ease-in-out infinite alternate;
         }
@@ -394,78 +439,86 @@
             <h1>777</h1>
         </header>
 
-        <div class="info-panel">
-            <div class="info-box">
-                <span>SCORE</span>
-                <strong id="score-val">0</strong>
+        <!-- 画面上部ダッシュボード -->
+        <div class="top-dashboard">
+            <!-- 左端: SCORE, HIGH SCORE, COMBO 縦並び -->
+            <div class="scores-column">
+                <div class="info-box">
+                    <span>SCORE</span>
+                    <strong id="score-val">0</strong>
+                </div>
+                <div class="info-box">
+                    <span>HIGH</span>
+                    <strong id="highscore-val">0</strong>
+                </div>
+                <div class="info-box">
+                    <span>COMBO</span>
+                    <strong id="combo-val">-</strong>
+                </div>
             </div>
-            <div class="info-box">
-                <span>HIGH SCORE</span>
-                <strong id="highscore-val">0</strong>
+
+            <!-- 中央: NEXT 1 -->
+            <div class="next-box">
+                <span>NEXT 1</span>
+                <div id="next1" class="next-preview"></div>
             </div>
-            <div class="info-box">
-                <span>COMBO</span>
-                <strong id="combo-val">-</strong>
+
+            <!-- 右端: NEXT 2 & PAUSE BUTTON -->
+            <div class="top-right-group">
+                <div class="next-box">
+                    <span>NEXT 2</span>
+                    <div id="next2" class="next-preview"></div>
+                </div>
+                <button class="icon-pause-btn" id="pause-btn" title="Pause">Ⅱ</button>
             </div>
         </div>
 
         <div class="main-content">
             <div id="board"></div>
-
-            <div class="side-panel">
-                <div class="next-container">
-                    <span>NEXT 1</span>
-                    <div id="next1" class="next-preview"></div>
-                </div>
-                <div class="next-container">
-                    <span>NEXT 2</span>
-                    <div id="next2" class="next-preview"></div>
-                </div>
-                <button class="ctrl-btn" id="pause-btn" style="padding: 8px; font-size: 0.8rem;">一時停止</button>
-            </div>
         </div>
 
-        <!-- タッチ操作ボタン -->
+        <!-- コントローラー（記号のみ） -->
         <div class="controls">
-            <button class="ctrl-btn" id="btn-left">◀ 左</button>
-            <button class="ctrl-btn" id="btn-right">右 ▶</button>
-            <button class="ctrl-btn" id="btn-down">▼ 落下</button>
-            <button class="ctrl-btn" id="btn-rotate">↻ 回転</button>
+            <button class="ctrl-btn" id="btn-left">◀</button>
+            <button class="ctrl-btn" id="btn-right">▶</button>
+            <button class="ctrl-btn" id="btn-down">▼</button>
+            <button class="ctrl-btn" id="btn-rotate">↻</button>
         </div>
 
+        <!-- Title Screen -->
         <div id="screen-title" class="overlay">
             <h2>777</h2>
-            <p>サイバーネオン空間で数字を操り<br>COMBOを繋ぐ次世代パズル</p>
+            <p>CYBER NEON PUZZLE<br>CONNECT TO 7 & TRIGGER COMBOS</p>
             <button class="menu-btn" id="start-btn">GAME START</button>
             <button class="sub-btn" id="rule-open-btn">HOW TO PLAY</button>
         </div>
 
-        <!-- ルール説明モーダル -->
+        <!-- Rule Modal (English Only) -->
         <div id="rule-modal" class="rule-modal">
             <div class="rule-content">
                 <h3>HOW TO PLAY</h3>
                 
                 <div class="rule-section">
-                    <h4>🎯 ゲームの目的</h4>
-                    <p>落ちてくる数字ブロックを組み合わせて、合計を**「7」**にして消していくパズルゲームです。</p>
+                    <h4>🎯 OBJECTIVE</h4>
+                    <p>Combine falling numbered blocks so that their sum equals **7** to clear them.</p>
                 </div>
 
                 <div class="rule-section">
-                    <h4>🕹️ 操作方法</h4>
+                    <h4>🕹️ CONTROLS</h4>
                     <ul>
-                        <li><span class="key">◀</span> / <span class="key">▶</span> : 左右移動</li>
-                        <li><span class="key">▼</span> : 高速落下</li>
-                        <li><span class="key">↻</span> : ブロック回転</li>
-                        <li>PCでは <span class="key">A/D</span> または矢印キー、回転は <span class="key">W</span> / <span class="key">Space</span></li>
+                        <li><span class="key">◀</span> / <span class="key">▶</span> : Move Left / Right</li>
+                        <li><span class="key">▼</span> : Soft Drop</li>
+                        <li><span class="key">↻</span> : Rotate Blocks</li>
+                        <li>PC: <span class="key">A/D</span> or Arrows, <span class="key">W</span> / <span class="key">Space</span> to Rotate</li>
                     </ul>
                 </div>
 
                 <div class="rule-section">
-                    <h4>💥 消去ルール</h4>
+                    <h4>💥 CLEAR RULES</h4>
                     <ul>
-                        <li>縦または横の直線上で、合計が**「7」**になる組み合わせを作ると消去されます。</li>
-                        <li>**「7」のブロック**が3個以上連続して並んだ場合も特殊消去が発生します！</li>
-                        <li>**2 COMBO以上**で演出とボーナススコアが強化されます。</li>
+                        <li>Line up blocks vertically or horizontally to sum **7**.</li>
+                        <li>Align 3 or more **"7"** blocks for special bonus clears!</li>
+                        <li>Chain **2+ COMBOS** to boost score multipliers & neon effects!</li>
                     </ul>
                 </div>
 
@@ -473,16 +526,18 @@
             </div>
         </div>
 
+        <!-- Pause Screen -->
         <div id="screen-pause" class="overlay hidden">
             <h2>PAUSE</h2>
-            <button class="menu-btn" id="resume-btn">再開する</button>
-            <button class="menu-btn" id="restart-btn">リスタート</button>
+            <button class="menu-btn" id="resume-btn">RESUME</button>
+            <button class="menu-btn" id="restart-btn">RESTART</button>
         </div>
 
+        <!-- Game Over Screen -->
         <div id="screen-gameover" class="overlay hidden">
             <h2>GAME OVER</h2>
-            <p>最終スコア: <span id="final-score">0</span></p>
-            <button class="menu-btn" id="retry-btn">もう一度プレイ</button>
+            <p>FINAL SCORE: <span id="final-score">0</span></p>
+            <button class="menu-btn" id="retry-btn">RETRY</button>
         </div>
     </div>
 
@@ -583,6 +638,7 @@
         const DROP_INTERVAL = 600;
         const SOFT_DROP_INTERVAL = 50;
         const COMBO_BONUSES = [0, 0, 40, 80, 160, 320, 480, 640];
+        const CELL_SIZE = 40; // Pixel size per cell
 
         let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
         let score = 0;
@@ -785,7 +841,7 @@
 
             if (matchResult.matchedCoords.length > 0) {
                 currentCombo++;
-                comboValEl.textContent = `${currentCombo} COMBO`;
+                comboValEl.textContent = `${currentCombo}`;
 
                 let turnScore = matchResult.baseScore;
                 if (currentCombo >= 2) {
@@ -995,8 +1051,8 @@
             block.dataset.r = r;
             block.dataset.c = c;
             block.textContent = val;
-            block.style.top = `${r * 33}px`;
-            block.style.left = `${c * 33}px`;
+            block.style.top = `${r * CELL_SIZE}px`;
+            block.style.left = `${c * CELL_SIZE}px`;
             boardEl.appendChild(block);
         }
 
@@ -1043,7 +1099,7 @@
             document.getElementById('screen-gameover').classList.remove('hidden');
         }
 
-        // イベントリスナー
+        // Event Listeners
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('retry-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', () => {
@@ -1063,7 +1119,7 @@
             }
         });
 
-        // ルール説明モーダルの開閉
+        // Rule Modal Listeners
         const ruleModal = document.getElementById('rule-modal');
         document.getElementById('rule-open-btn').addEventListener('click', () => {
             ruleModal.style.display = 'flex';
@@ -1105,3 +1161,4 @@
     </script>
 </body>
 </html>
+
